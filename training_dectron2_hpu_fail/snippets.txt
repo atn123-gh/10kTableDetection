@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# sanityCheck
+python3 plain_train_net.py \
+    --json_annotation_train ../data/train.json \
+    --image_path_train      ../data/ \
+    --json_annotation_val   ../data/val.json \
+    --image_path_val        ../data/ \
+    --config-file           faster_rcnn_R_50_FPN_3x.yml \
+    --enable-lazy \
+    SOLVER.IMS_PER_BATCH 32 \
+    SOLVER.MAX_ITER 15200 \
+    MODEL.DEVICE hpu
+    
+
+#    --eval_only \
+
+    
+# hpu single hpu
+python3 plain_train_net.py \
+    --dataset_name          10kTable-layout \
+    --json_annotation_train ../data/train.json \
+    --image_path_train      ../data/ \
+    --json_annotation_val   ../data/val.json \
+    --image_path_val        ../data/ \
+    --config-file           faster_rcnn_R_50_FPN_3x.yml \
+    --eval_only `#on/off` \
+    --dl-worker-type HABANA \
+    --enable-lazy \
+    OUTPUT_DIR  ../outputs/ \
+    SOLVER.IMS_PER_BATCH 128 \
+    SOLVER.MAX_ITER 300000 \  
+    SOLVER.STEPS 210000 250000 \
+    MODEL.DEVICE hpu
+
+
+###  base docker image from https://developer.habana.ai/catalog/pytorch-conntainer/
+### docker environment installation(TODO: dockerfile)
+python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
+pip install --upgrade pip
+pip install layoutparser gdown
+
+#################
+## on new instance
+sudo apt update && sudo apt upgrade -y  && sudo apt install docker.io awscli zip python3-pip gdown -y 
+
+docker login
+sudo docker pull [container]
+
+
+sudo docker run --name 10kdh -it --rm --runtime=habana \
+-e HABANA_VISIBLE_DEVICES=all \
+-e OMPI_MCA_btl_vader_single_copy_mecahnism=none \
+--cap-add=sys_nice --net=host --ipc=host \
+-v /home/ubuntu:/home/ \
+[container]
+
+gdown https://drive.google.com/... dataset path
+git clone https://github.com/ember816/10kTable-Detection.git
+sudo docker exec -it 10kdh /bin/bash
+sudo kill -9 pid
+
+### script inside docker
+
+apt update && apt upgrade -y && sudo apt gdown -y 
+zip -r outputs.zip outputs/
+unzip data.zip
+
+
+
+### transfer output to s3
+aws s3 cp tmp.zip  s3://aws-bucket
