@@ -1,6 +1,7 @@
 ### 10kTableDetection
 
-A model to retrieve table with header and footer information from 10k report.
+Existing models can only detect general tables.
+This model is specifically trained for 10k report financial statement tables and can also extract information from the table's header and footer.
 Finetune with Detectron2LayoutModel (lp://PubLayNet/faster_rcnn_R_50_FPN_3x/config ) on GPU.
 
 
